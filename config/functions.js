@@ -1,4 +1,3 @@
-const bodyParser = require('body-parser');
 const multer = require('multer');
 
 const upload = multer({
@@ -66,26 +65,24 @@ function uploadSinglePic(req, res, path) {
   }
 }
 
-function parseFormData(req, res, next) {
-  upload.single('file')(req, res, (err) => {
-    if (err) {
-      return res.status(400).json({
-        status: 'failed',
-        error: 'Failed to parse file upload'
-      });
-    }
-    bodyParser.urlencoded({ extended: true })(req, res, (err) => {
-      if (err) {
-        return res.status(400).json({
-          status: 'failed',
-          error: 'Failed to parse form data'
-        });
-      }
-      next();
-    });
-  });
-};
+function isValidUserId(id) {
+  // Check if the ID is a non-empty string
+  if (typeof id !== 'string') {
+    console.log('id===', id)
+    return false;
+  }
 
+  // Check if the ID is a 24-character hexadecimal string (MongoDB ObjectID)
+  const regex = /^[0-9a-fA-F]{24}$/;
+  if (!regex.test(id)) {
+    return false;
+  }
 
-module.exports = uploadSinglePic
-module.exports = parseFormData
+  // If we've made it this far, the ID is valid
+  return true;
+}
+
+module.exports = {
+  uploadSinglePic,
+  isValidUserId
+}

@@ -55,6 +55,26 @@ const tailorSchema = new mongoose.Schema({
     profile_pic: {
         type: String,
         default: "",
+    },
+    is_deleted: {
+        type: String,
+        default: 0
+    },
+    is_active: {
+        type: String,
+        default: 1
+    },
+    rates: {
+        type: Array,
+        default: []
+    },
+    tailor_type: {
+        type: String,
+        default: null
+    },
+    api_logged_sess: {
+        type: String,
+        default: null
     }
 });
 
