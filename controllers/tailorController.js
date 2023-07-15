@@ -1,3 +1,6 @@
+const multer = require('multer');
+const express = require('express');
+
 const Tailor = require('../models/tailor_model');
 const Customer = require('../models/customers_model');
 const CustomersTailor = require('../models/customers_tailors_model');
@@ -7,19 +10,25 @@ const baseUrl = require('../config/constants');
 const { uploadSinglePic, isValidUserId } = require('../config/functions');
 const Measurement = require('../models/measurements');
 const authController = require('./authController');
+
 // const isValidUserId = require('../config/functions');
+
+
+const app = express();
 
 
 const tailorController = {
 
     async add_customer(req, res) {
-        await authController.do_auth(req.body);
+        const user = await authController.do_auth(req.body, res);
+        if (!user) return;
+
         try {
             const body = req.body;
-            if (!body.user_id) {
-                res.json({ status: "failed", error: 'user_id is mandatory' });
-                return;
-            }
+            // if (!body.user_id) {
+            //     res.json({ status: "failed", error: 'user_id is mandatory' });
+            //     return;
+            // }
             if (!body.name) {
                 res.json({ status: "failed", error: 'Please enter a valid name' });
                 return;
@@ -28,10 +37,10 @@ const tailorController = {
                 res.json({ status: "failed", error: 'Please enter a valid phone' });
                 return;
             }
-            if (!body.email) {
-                res.json({ status: "failed", error: 'Please enter a valid email' });
-                return;
-            }
+            // if (!body.email) {
+            //     res.json({ status: "failed", error: 'Please enter a valid email' });
+            //     return;
+            // }
 
             // if (!body.measurements) {
             //     res.json({ status: "failed", error: 'Please enter at least one measurement' });
@@ -60,6 +69,7 @@ const tailorController = {
             //         });
             //     return;
             // }
+            console.log('here is thebody', body);
 
             const customer = new Customer(body);
 
@@ -67,12 +77,12 @@ const tailorController = {
                 .then(result => {
                     console.log('New record saved with ID:', result._id);
                     const custTailorBody = new CustomersTailor({
-                        cust_id: result._id,
-                        tailor_id: body.user_id
+                        cust_id: result._id.toString(),
+                        tailor_id: user._id.toString()
                     })
                     const measurementsBody = new Measurement({
                         cust_id: result._id,
-                        tailor_id: body.user_id,
+                        tailor_id: user._id,
                         measurement: body.measurements
                     })
                     custTailorBody.save()
@@ -83,10 +93,11 @@ const tailorController = {
                             console.error(`Error creating user: ${err.message}`);
                         });
                     measurementsBody.save();
-                    res.json({ status: "success", message: 'Customer saved successfully' });
+                    res.json({ action: "success", message: 'Customer saved successfully' });
                 })
                 .catch(err => {
-                    res.json({ status: "failed", error: err.message });
+                    console.log('error saving customer', err);
+                    res.json({ action: "failed", error: err.message });
                 });
 
         } catch (err) {
@@ -96,58 +107,56 @@ const tailorController = {
     },
 
     async get_tailor_customers(req, res) {
-        await authController.do_auth(req.body,res);
-        const body = req.body;
-        if (!body.user_id) {
-            res.json({ status: "failed", error: 'user_id is mandatory' });
-            return;
-        }
-        const tailorId = body.user_id;
-        CustomersTailor.find({ tailor_id: tailorId })
+        const user = await authController.do_auth(req.body, res);
+        if (!user) return;
+        console.log('user_id ===', user._id.toString());
+        CustomersTailor.find({ tailor_id: user._id.toString() })
             .then(result => {
-                console.log('results arr', result)
                 const customerIds = result.map((item) => item.cust_id);
                 console.log('customerId', customerIds)
                 Customer.find({ _id: { $in: customerIds } })
                     .then(result => {
-                        res.json({ status: "success", data: result });
+                        res.json({ action: "success", data: result });
                     })
                     .catch(err => {
-                        res.json({ status: "failed", error: err.message });
+                        res.json({ action: "failed", error: err.message });
                     })
             })
             .catch(err => {
-                res.json({ status: "failed", error: err.message });
+                res.json({ action: "failed", error: err.message });
             })
     },
 
     async get_customer_details(req, res) {
-        await authController.do_auth(req.body,res);
+        const user = await authController.do_auth(req.body, res);
+        if (!user) return;
         try {
             const body = req.body;
-            if (!body.user_id) {
-                res.json({ status: "failed", error: 'user_id is mandatory' });
-                return;
-            }
-            if (!isValidUserId(body.user_id)) {
-                res.json({ status: "failed", error: 'Invalud user id' });
-                return;
-            }
+            // if (!body.user_id) {
+            //     res.json({ action: "failed", error: 'user_id is mandatory' });
+            //     return;
+            // }
+            // if (!isValidUserId(body.user_id)) {
+            //     res.json({ action: "failed", error: 'Invalud user id' });
+            //     return;
+            // }
             if (!body.cust_id) {
-                res.json({ status: "failed", error: 'cust_id is mandatory' });
+                res.json({ action: "failed", error: 'cust_id is mandatory' });
                 return;
             }
             if (!isValidUserId(body.cust_id)) {
-                res.json({ status: "failed", error: 'Invalud customer id' });
+                res.json({ action: "failed", error: 'Invalud customer id' });
                 return;
             }
             let customerData = await Customer.find({ _id: body.cust_id });
-            const measurements = await Measurement.find({ cust_id: body.cust_id, tailor_id: body.user_id });
+            console.log('customerData', customerData)
+            const measurements = await Measurement.find({ cust_id: body.cust_id, tailor_id: user._id });
+            console.log('measurements', measurements);
             let data = {
                 ...customerData[0]._doc,
-                measurements
+                measurements: measurements[0]
             }
-            res.json({ status: "success", data: data });
+            res.json({ action: "success", data: data });
         }
         catch (err) {
             console.log('get_customer_details error===', err)
@@ -157,34 +166,30 @@ const tailorController = {
     },
 
     async add_order(req, res) {
-        await authController.do_auth(req.body,res);
+
         try {
             const imageData = await uploadSinglePic(req, res);
             if (imageData.status == 'failed') {
+                console.log('iamge,im', error)
                 res.json({ status: "failed", error: imageData.error });
                 return;
             }
+            const user = await authController.do_auth(req.body, res);
+            console.log('user====', user)
+            if (!user) return;
             const picUrl = baseUrl.concat(imageData?.data?.path);
             const body = req.body;
-            if (!body.user_id) {
-                res.json({ status: "failed", error: 'user_id is mandatory' });
-                return;
-            }
             if (!body.cust_id) {
-                res.json({ status: "failed", error: 'Customer id is mandatory' });
+                res.json({ action: "failed", error: 'Customer id is mandatory' });
                 return;
             }
             if (!body.order_measurements) {
                 console.log('bodyasd===', body)
-                res.json({ status: "failed", error: 'Please enter customer measurements' });
+                res.json({ action: "failed", error: 'Please enter customer measurements' });
                 return;
             }
             if (!isValidUserId(body.cust_id)) {
-                res.json({ status: "failed", error: 'Invalid customer id' });
-                return;
-            }
-            if (!isValidUserId(body.user_id)) {
-                res.json({ status: "failed", error: 'Invalid user id' });
+                res.json({ action: "failed", error: 'Invalid customer id' });
                 return;
             }
             // console.log(body.order_measurements);
@@ -192,24 +197,31 @@ const tailorController = {
             const getCustomer = await Customer.findById(body.cust_id);
             const dbData = {
                 cust_id: body.cust_id,
-                tailor_id: body.user_id,
+                tailor_id: user._id,
                 order_measurements: body.order_measurements,
                 suit_pic: picUrl,
                 cust_name: getCustomer?.name,
                 cust_phone: getCustomer?.phone,
+                order_status: 'on_going',
+                note: body.note,
+                total_payment: body.total_payment,
+                paid_payment: body.paid_payment,
+                delivery_date: body.delivery_date ? JSON.parse(body.delivery_date) : null
             };
+            console.log('body====', body);
             const order = new Orders(dbData);
             order.save()
                 .then(user => {
+                    res.json({ action: "success", data: user });
                     console.log(`Order created: ${user}`);
-                    res.json({ status: "success", data: user });
                     return;
                 })
                 .catch(err => {
                     console.error(`Error creating user: ${err.message}`);
-                    res.json({ status: "failed", error: err.message });
+                    res.json({ action: "failed", error: err.message });
                     return;
                 });
+
         }
         catch (err) {
             console.log('err===', err)

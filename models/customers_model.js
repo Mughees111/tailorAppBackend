@@ -4,17 +4,17 @@ const mongoose = require('mongoose');
 const customersSchema = new mongoose.Schema({
     name: {
         type: String,
-        default: null
+        default: ""
     },
     phone: {
         type: String,
-        default: null,
+        default: "",
         unique: true
     },
     email: {
         type: String,
-        default: null,
-        unique: true
+        default: "3",
+        // unique: false
     },
     // measurements: {
     //     type: Array,
@@ -34,7 +34,7 @@ const customersSchema = new mongoose.Schema({
     },
     push_id: {
         type: String,
-        default: null
+        default: ""
     },
 
 });

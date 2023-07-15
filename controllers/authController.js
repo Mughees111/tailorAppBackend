@@ -25,24 +25,25 @@ const authController = {
             const body = req.body;
             if (body.email == '') {
                 res.json({
-                    status: "failed",
+                    action: "failed",
                     error: "Please enter a valid email"
                 });
                 return;
             }
             if (body.password == '') {
                 res.json({
-                    status: "failed",
+                    action: "failed",
                     error: "Please enter a valid password"
                 });
                 return;
             }
-            const users = await Tailor.find({ email: body.email, password: body.password });
 
-            const data = await authController.do_sure_login(users[0]?._id ?? '', res);
+            const users = await Tailor.findOne().and([{ email: body.email }, { password: body.password }]);
+            console.log('userssssss', users?._id.toString())
+            const data = await authController.do_sure_login(users?._id ?? '', res);
             if (!data) return;
             res.json({
-                status: "success",
+                action: "success",
                 data: data
             });
             // if (users?.length) {
@@ -68,31 +69,31 @@ const authController = {
         try {
             const body = req.body;
             if (!body.name) {
-                res.json({ status: "failed", error: 'Please enter a valid name' });
+                res.json({ action: "failed", error: 'Please enter a valid name' });
                 return;
             }
             if (!body.shop_name) {
-                res.json({ status: "failed", error: 'Please enter a valid shop name' });
+                res.json({ action: "failed", error: 'Please enter a valid shop name' });
                 return;
             }
             if (!body.phone) {
-                res.json({ status: "failed", error: 'Please enter a valid phone' });
+                res.json({ action: "failed", error: 'Please enter a valid phone' });
                 return;
             }
-            if (!body.country_code) {
-                res.json({ status: "failed", error: 'Please enter a valid country code' });
-                return;
-            }
+            // if (!body.country_code) {
+            //     res.json({ action: "failed", error: 'Please enter a valid country code' });
+            //     return;
+            // }
             if (!body.email) {
-                res.json({ status: "failed", error: 'Please enter a valid email' });
+                res.json({ action: "failed", error: 'Please enter a valid email' });
                 return;
             }
             if (!body.password) {
-                res.json({ status: "failed", error: 'Please enter a valid password' });
+                res.json({ action: "failed", error: 'Please enter a valid password' });
                 return;
             }
             if (!body.tailor_type) {
-                res.json({ status: "failed", error: 'Tailor type is mandatory' });
+                res.json({ action: "failed", error: 'Tailor type is mandatory' });
                 return;
             }
             const tailor = new Tailor(body);
@@ -101,11 +102,11 @@ const authController = {
                     console.log(`New user created: ${user}`);
                     const data = await authController.do_sure_login(user._id ?? '', res);
                     if (!data) return;
-                    res.json({ status: "success", data: data });
+                    res.json({ action: "success", data: data });
                 })
                 .catch(err => {
                     console.error(`Error creating user: ${err.message}`);
-                    res.json({ status: "failed", error: err.message });
+                    res.json({ action: "failed", error: err.message });
                 });
         } catch (err) {
             console.error(`SignUp API error: ${err.message}`);
@@ -118,11 +119,13 @@ const authController = {
             res.json({ action: 'failed', error: 'Invalid login credentials' });
             return;
         }
+
         const user = await Tailor.findOne().and([
             { is_deleted: 0 }, { is_active: 1 }, { api_logged_sess: req.token }
         ])
+        console.log('user===', user)
         if (user) {
-            return user[0];
+            return user;
         }
         else {
             res.json({ action: 'failed', error: 'Invalid login credentials' });
@@ -134,17 +137,19 @@ const authController = {
         let user = await Tailor.findOne().and([
             { is_deleted: 0 }, { is_active: 1 }, { _id: req._id }
         ])
-        console.log('user ===', user)
+        console.log('user ===', req._id)
         if (!user) {
             res.json({ action: 'failed', error: 'Invalid login credentials' });
             return;
         }
         const myGuid = uuidv4();
         const myHash = md5(myGuid);
-        Tailor.updateOne({
-            _id: req._id,
-            api_logged_sess: myHash
-        });
+        console.log('myHash', myHash)
+        console.log('req.id', req._id.toString());
+        await Tailor.updateOne(
+            { _id: req._id.toString(), },
+            { api_logged_sess: myHash },
+        )
         user.api_logged_sess = myHash;
         return user;
 

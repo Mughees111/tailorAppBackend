@@ -17,7 +17,7 @@ const tailorSchema = new mongoose.Schema({
     },
     country_code: {
         type: String,
-        default: "",
+        default: "92",
     },
     email: {
         type: String,
@@ -70,11 +70,11 @@ const tailorSchema = new mongoose.Schema({
     },
     tailor_type: {
         type: String,
-        default: null
+        default: ""
     },
     api_logged_sess: {
         type: String,
-        default: null
+        default: ""
     }
 });
 

@@ -4,11 +4,11 @@ const mongoose = require('mongoose');
 const measurementsSchema = new mongoose.Schema({
     cust_id: {
         type: String,
-        default: null
+        default: ""
     },
     tailor_id: {
         type: String,
-        default: null,
+        default: "",
     },
     measurement: {
         type: Array,

@@ -4,19 +4,19 @@ const mongoose = require('mongoose');
 const ordersSchema = new mongoose.Schema({
     cust_id: {
         type: String,
-        default: null
+        default: ""
     },
     tailor_id: {
         type: String,
-        default: null
+        default: ""
     },
     cust_name: {
         type: String,
-        default: null,
+        default: "",
     },
     cust_phone: {
         type: String,
-        default: null,
+        default: "",
     },
     order_measurements: {
         type: Array,
@@ -24,19 +24,24 @@ const ordersSchema = new mongoose.Schema({
     },
     note: {
         type: String,
-        default: null,
+        default: "",
     },
+    order_status: {
+        type: String,
+        default: "",
+    },
+
     total_payment: {
         type: Number || String,
-        default: null,
+        default: "",
     },
     paid_payment: {
         type: Number || String,
-        default: null,
+        default: "",
     },
     suit_pic: {
         type: String,
-        default: null,
+        default: "",
     },
     created_at: {
         type: Date,
@@ -48,7 +53,11 @@ const ordersSchema = new mongoose.Schema({
     },
     updated_by: {
         type: String,
-        default: null
+        default: ""
+    },
+    delivery_date: {
+        type: Date || String,
+        default: ""
     }
 
 });
